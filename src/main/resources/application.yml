@@ -1,0 +1,17 @@
+#DB CONNECTION
+spring:
+  application:
+    name: spring-stream-backend
+  datasource:
+    url: jdbc:mysql://localhost:3306/PROJECTS_DB
+    username: root
+    password: root
+#JPA PROPERTIES
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+files:
+  videos:
+    videos/
