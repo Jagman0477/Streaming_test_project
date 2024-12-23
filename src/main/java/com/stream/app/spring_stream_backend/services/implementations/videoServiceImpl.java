@@ -89,7 +89,7 @@ public class videoServiceImpl implements VideoService {
 
     @Override
     public List<VideoEntity> getAllVideos() {
-        return null;
+        return  videoRepository.findAll();
     }
 
     @Override

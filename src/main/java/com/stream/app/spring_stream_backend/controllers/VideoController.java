@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -43,6 +44,14 @@ public class VideoController {
                     .body(new Response(CommonConstants.FAILURE, CommonConstants.VIDEO_NOT_UPLOADED,
                             HttpStatus.INTERNAL_SERVER_ERROR.value(), HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), LocalDateTime.now().toString()));
         }
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<VideoEntity>> getAllVideos() {
+        List<VideoEntity> videoList = videoService.getAllVideos();
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(videoList);
     }
 
 }
