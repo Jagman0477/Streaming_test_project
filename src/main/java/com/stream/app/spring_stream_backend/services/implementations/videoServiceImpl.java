@@ -20,6 +20,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -53,14 +56,14 @@ public class videoServiceImpl implements VideoService {
 
     @Override
     public VideoEntity getVideoById(Long videoId) {
-        return null;
+        return videoRepository.findById(videoId).orElseThrow(() -> new RuntimeException("Video not Found."));
     }
 
     @Override
     public VideoEntity saveVideo(VideoEntity videoEntity, MultipartFile videoFile) {
         try {
             // get file metadata
-            String fileName = videoFile.getOriginalFilename();
+             String fileName = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + videoFile.getOriginalFilename();
             InputStream fileStream = videoFile.getInputStream();
             Long fileSize = videoFile.getSize();
             String contentType = videoFile.getContentType();
@@ -89,7 +92,7 @@ public class videoServiceImpl implements VideoService {
 
     @Override
     public List<VideoEntity> getAllVideos() {
-        return null;
+        return  videoRepository.findAll();
     }
 
     @Override

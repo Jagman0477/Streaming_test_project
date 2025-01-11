@@ -8,7 +8,7 @@ import lombok.Data;
 public class ErrorResponseModel {
 
     private String guid;
-    private String reason;
+    private String message;
     private Integer statusCode;
     private String statusName;
     private String timeStamp;

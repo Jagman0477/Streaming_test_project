@@ -11,6 +11,6 @@ public class Response {
     private String message;
     private Integer statusCode;
     private String statusName;
-    private String submittedAt;
+    private String timeStamp;
 
 }
