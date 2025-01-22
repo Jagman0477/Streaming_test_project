@@ -1,6 +1,7 @@
 package com.stream.app.spring_stream_backend.services;
 
 import com.stream.app.spring_stream_backend.entities.VideoEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -18,5 +19,8 @@ public interface VideoService {
 
     // get a video by title
     VideoEntity getVideoByTitle(String videoTitle);
+
+    // stream video from id and range
+    ResponseEntity<?> streamVideo(String range, String videoId);
 
 }

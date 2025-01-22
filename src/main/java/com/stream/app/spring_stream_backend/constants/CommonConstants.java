@@ -8,5 +8,6 @@ public class CommonConstants {
     public static final String SUCCESS = "Success";
     public static final String FAILURE = "Failure";
     public static final String IO_EXCEPTION_MESSAGE = "Failed because of IO Exception.";
+    public static final Integer CHUNK_SIZE = 1024*1024; //MB
 
 }

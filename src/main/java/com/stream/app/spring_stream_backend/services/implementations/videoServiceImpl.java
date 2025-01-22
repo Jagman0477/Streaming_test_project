@@ -2,6 +2,7 @@ package com.stream.app.spring_stream_backend.services.implementations;
 
 import com.stream.app.spring_stream_backend.constants.CommonConstants;
 import com.stream.app.spring_stream_backend.entities.VideoEntity;
+import com.stream.app.spring_stream_backend.models.Response;
 import com.stream.app.spring_stream_backend.repositories.VideoRepository;
 import com.stream.app.spring_stream_backend.services.VideoService;
 import jakarta.annotation.PostConstruct;
@@ -9,6 +10,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,9 +30,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 public class videoServiceImpl implements VideoService {
@@ -98,5 +104,67 @@ public class videoServiceImpl implements VideoService {
     @Override
     public VideoEntity getVideoByTitle(String videoTitle) {
         return null;
+    }
+
+    public ResponseEntity<?> streamVideo(String range, String videoId) {
+        VideoEntity video = getVideoById(Long.valueOf(videoId));
+        String filePath = video.getFilePath();
+        String contentType = video.getContentType();
+        Resource resource = new FileSystemResource(filePath);
+        Long fileLength = null;
+        try {
+            fileLength = resource.contentLength();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        List<String> ranges = new ArrayList<String>();
+        if(Objects.isNull(contentType)){
+            contentType = "application/octet-stream";
+        }
+
+        if(range == null){
+            return ResponseEntity
+                    .ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .body(resource);
+        }
+
+        // Calculate video range.
+        ranges = Arrays.stream(range.replace("bytes=", "").split("-")).toList();
+
+        Long rangeStart = Long.parseLong(ranges.get(0));
+
+        Long rangeEnd = rangeStart + CommonConstants.CHUNK_SIZE - 1;
+        if(rangeEnd >= fileLength)
+            rangeEnd = fileLength - 1;
+
+        InputStream rangedVideoStream;
+        try {
+            rangedVideoStream = Files.newInputStream(Paths.get(filePath));
+            rangedVideoStream.skip(rangeStart);
+
+            long contentLength = rangeEnd - rangeStart + 1;
+            byte[] buffer = new byte[(int) contentLength];
+            int contentRead = rangedVideoStream.read(buffer, 0, buffer.length);
+            LOGGER.info("Range: "+rangeStart+" - "+rangeEnd);
+            LOGGER.info("Read number of bytes = " + contentRead);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Range","bytes "+rangeStart+"-"+rangeEnd+"/"+fileLength);
+            headers.add("Cache-Control", "no-cache, no-store");
+            headers.setContentLength(contentLength);
+
+            return ResponseEntity
+                    .status(HttpStatus.PARTIAL_CONTENT)
+                    .headers(headers)
+                    .contentLength(contentLength)
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .body(new ByteArrayResource(buffer));
+        } catch (IOException error) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(CommonConstants.FAILURE, CommonConstants.VIDEO_NOT_UPLOADED,
+                            HttpStatus.INTERNAL_SERVER_ERROR.value(), HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), LocalDateTime.now().toString()));
+        }
     }
 }

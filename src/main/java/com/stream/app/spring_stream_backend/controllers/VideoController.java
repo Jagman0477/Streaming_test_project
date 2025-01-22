@@ -62,56 +62,8 @@ public class VideoController {
     @GetMapping("/watch/{videoId}")
     public ResponseEntity<?> stream(
             @PathVariable String videoId,
-            @RequestHeader(value = "Range", required = false) String range) throws IOException {
-        VideoEntity video = videoService.getVideoById(Long.valueOf(videoId));
-        String filePath = video.getFilePath();
-        String contentType = video.getContentType();
-        Resource resource = new FileSystemResource(filePath);
-        Long fileLength = resource.contentLength();
-        List<String> ranges = new ArrayList<String>();
-        if(Objects.isNull(contentType)){
-            contentType = "application/octet-stream";
-        }
-
-        LOGGER.info("Range: "+range);
-        if(range == null){
-            return ResponseEntity
-                    .ok()
-                    .contentType(MediaType.parseMediaType(contentType))
-                    .body(resource);
-        }
-
-        // Calculate video range.
-        ranges = Arrays.stream(range.replace("bytes=", "").split("-")).toList();
-
-        Long rangeStart = Long.parseLong(ranges.get(0));
-        Long rangeEnd = ranges.size() > 1 ? Long.parseLong(ranges.get(1)) : fileLength - 1;
-        if(rangeEnd > fileLength)
-            rangeStart = fileLength - 1;
-
-        InputStream rangedVideoStream;
-        try {
-            rangedVideoStream = Files.newInputStream(Paths.get(filePath));
-            rangedVideoStream.skip(rangeStart);
-        } catch (IOException error) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new Response(CommonConstants.FAILURE, CommonConstants.VIDEO_NOT_UPLOADED,
-                            HttpStatus.INTERNAL_SERVER_ERROR.value(), HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), LocalDateTime.now().toString()));
-        }
-
-        Long contentLength = rangeEnd - rangeStart + 1;
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Range","bytes "+rangeStart+"-"+rangeEnd+"/"+fileLength);
-        headers.add("Cache-Control", "no-cache, no-store");
-        headers.setContentLength(contentLength);
-
-        return ResponseEntity
-                .status(HttpStatus.PARTIAL_CONTENT)
-                .headers(headers)
-                .contentLength(contentLength)
-                .contentType(MediaType.parseMediaType(contentType))
-                .body(new InputStreamResource(rangedVideoStream));
+            @RequestHeader(value = "Range", required = false) String range){
+        return videoService.streamVideo(range, videoId);
     }
 
     @GetMapping("/all")
